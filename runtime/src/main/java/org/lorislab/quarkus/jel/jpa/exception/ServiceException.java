@@ -23,118 +23,59 @@ import java.util.*;
  *
  * @author Andrej Petras
  */
-public class ServiceException extends Exception implements Serializable {
-
-    /**
-     * The UID for this class.
-     */
-    private static final long serialVersionUID = -4874552216768714025L;
+public class ServiceException extends Exception {
 
     /**
      * The key of resource.
      */
-    private final Enum key;
+    public final Enum key;
 
     /**
      * The arguments for the message.
      */
-    private final List<Object> parameters = new ArrayList<>();
+    public final List<Object> parameters = new ArrayList<>();
 
-    private final Map<String, Object> namedParameters = new HashMap<>();
-
-    private boolean stackTraceLog = false;
+    public final Map<String, Object> namedParameters = new HashMap<>();
 
     /**
      * The constructor with the resource key and cause.
      *
      * @param key           the resource key.
      * @param parameters    the resource key arguments.
-     * @param stackTraceLog the stack trace log flag.
      * @param cause         the throw able cause.
      */
-    public ServiceException(boolean stackTraceLog, final Enum key, final Throwable cause, Serializable... parameters) {
+    public ServiceException(final Enum key, final Throwable cause, Serializable... parameters) {
         super(cause);
         this.key = key;
-        this.stackTraceLog = stackTraceLog;
         if (parameters != null && parameters.length > 0) {
             this.parameters.addAll(Arrays.asList(parameters));
         }
-    }
-
-    /**
-     * The constructor with the resource key and cause.
-     *
-     * @param key        the resource key.
-     * @param parameters the resource key arguments.
-     * @param cause      the throw able cause.
-     */
-    public ServiceException(final Enum key, final Throwable cause, Serializable... parameters) {
-        this(false, key, cause, parameters);
-    }
-
-    /**
-     * The constructor with the resource key and cause.
-     *
-     * @param key             the resource key.
-     * @param parameters      the resource key arguments.
-     * @param cause           the throw able cause.
-     * @param namedParameters the named parameters.
-     */
-    public ServiceException(final Enum key, final Throwable cause, List<Object> parameters, Map<String, Object> namedParameters) {
-        super(cause);
-        this.key = key;
-        addParameters(parameters);
-        addNamedParameters(namedParameters);
-    }
-
-    /**
-     * Gets the key of resource.
-     *
-     * @return the key of resource.
-     */
-    public final Enum<?> getKey() {
-        return key;
-    }
-
-    /**
-     * Gets the arguments of the message.
-     *
-     * @return the arguments of the message.
-     */
-    public final List<Object> getParameters() {
-        return parameters;
     }
 
     public final void addParameter(Object parameter) {
         parameters.add(parameter);
     }
 
-    public final void addParameters(List<Object> parameters) {
+    public final void addParameter(List<Object> parameters) {
         if (parameters != null) {
             this.parameters.addAll(parameters);
         }
     }
 
-    public final void addNamedParameter(String name, Object parameter) {
-        namedParameters.put(name, parameter);
+    public final void addParameter(String name, Object parameter) {
+        if (name != null) {
+            namedParameters.put(name, parameter);
+        }
     }
 
-    public final void addNamedParameters(Map<String, Object> namedParameters) {
+    public final void addParameter(Map<String, Object> namedParameters) {
         if (namedParameters != null) {
             this.namedParameters.putAll(namedParameters);
         }
     }
 
-    public Map<String, Object> getNamedParameters() {
-        return namedParameters;
+    @Override
+    public String toString() {
+        return key.name();
     }
-
-    public boolean isStackTraceLog() {
-        return stackTraceLog;
-    }
-
-    public void setStackTraceLog(boolean stackTraceLog) {
-        this.stackTraceLog = stackTraceLog;
-    }
-
 }

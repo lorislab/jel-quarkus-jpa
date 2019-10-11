@@ -18,16 +18,14 @@ package org.lorislab.quarkus.jel.jpa.service;
 import org.lorislab.quarkus.jel.jpa.exception.ConstraintException;
 import org.lorislab.quarkus.jel.jpa.exception.ServiceException;
 import org.lorislab.quarkus.jel.jpa.model.Persistent;
+import org.lorislab.quarkus.jel.jpa.model.Persistent_;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.persistence.*;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaDelete;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
+import javax.persistence.criteria.*;
 import javax.transaction.Transactional;
 import java.util.*;
 
@@ -55,22 +53,27 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      * The entity manager.
      */
     @Inject
-    EntityManager em;
+    public EntityManager em;
 
     /**
      * The entity class.
      */
-    private Class<T> entityClass;
+    protected Class<T> entityClass;
 
     /**
      * The entity name.
      */
-    private String entityName;
+    protected String entityName;
 
     /**
      * The load entity graph.
      */
     private EntityGraph<? super T> loadEntityGraph;
+
+    /**
+     * The criteria builder.
+     */
+    protected CriteriaBuilder cb;
 
     /**
      * Initialize the entity service bean.
@@ -97,6 +100,7 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
             }
         }
         loadEntityGraph = graph;
+        cb = em.getCriteriaBuilder();
     }
 
     /**
@@ -142,7 +146,6 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      * @return the updated entity.
      * @throws ServiceException if the method fails.
      */
-    @SuppressWarnings("unchecked")
     @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
     public T update(T entity) throws ServiceException {
         try {
@@ -164,20 +167,17 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
     @SuppressWarnings("unchecked")
     @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
     public List<T> update(List<T> entities) throws ServiceException {
-        List<T> result = null;
         if (entities != null) {
-            result = new ArrayList<>(entities.size());
             try {
-                for (int i = 0; i < entities.size(); i++) {
-                    result.add(em.merge(entities.get(i)));
-                }
+                final List<T> result = new ArrayList<>(entities.size());
+                entities.forEach(e -> result.add(em.merge(e)));
                 em.flush();
                 return result;
             } catch (Exception e) {
                 throw handleConstraint(e, EntityServiceErrors.MERGE_ENTITY_FAILED);
             }
         }
-        return result;
+        return Collections.emptyList();
     }
 
     /**
@@ -190,7 +190,7 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
     @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
     public T create(T entity) throws ServiceException {
         try {
-            this.em.persist(entity);
+            em.persist(entity);
             em.flush();
         } catch (Exception e) {
             throw handleConstraint(e, EntityServiceErrors.PERSIST_ENTITY_FAILED);
@@ -209,9 +209,7 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
     public List<T> create(List<T> entities) throws ServiceException {
         if (entities != null) {
             try {
-                for (int i = 0; i < entities.size(); i++) {
-                    this.em.persist(entities.get(i));
-                }
+                entities.forEach(em::persist);
                 em.flush();
             } catch (Exception e) {
                 throw handleConstraint(e, EntityServiceErrors.PERSIST_ENTITY_FAILED);
@@ -227,28 +225,6 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      */
     protected void refresh(T entity) {
         em.refresh(entity);
-    }
-
-    /**
-     * Deletes the entity.
-     *
-     * @param guid the GUID.
-     * @return <code>true</code> if the entity was correctly deleted.
-     * @throws ServiceException if the method fails.
-     */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public boolean deleteByGuid(String guid) throws ServiceException {
-        try {
-            T loaded = this.findByGuid(guid);
-            if (loaded != null) {
-                em.remove(loaded);
-                em.flush();
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
-            throw handleConstraint(e, EntityServiceErrors.DELETE_ENTITY_BY_GUID_FAILED);
-        }
     }
 
     /**
@@ -303,7 +279,9 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      */
     protected Query createNamedQuery(String namedQuery, Map<String, Object> parameters) {
         Query query = em.createNamedQuery(namedQuery);
-        bindParameters(query, parameters);
+        if (parameters != null && !parameters.isEmpty()) {
+            parameters.forEach(query::setParameter);
+        }
         return query;
     }
 
@@ -325,15 +303,13 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      * @throws ServiceException if the method fails.
      */
     @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public List<T> findByGuids(List<String> guids) throws ServiceException {
+    public List<T> findByGuid(List<String> guids) throws ServiceException {
         List<T> result = null;
         if (guids != null && !guids.isEmpty()) {
             try {
-                CriteriaQuery<T> cq = getCriteriaQuery();
-                Root<T> root = cq.from(entityClass);
-                cq.where(root.get("guid").in(guids));
-                TypedQuery<T> query = em.createQuery(cq);
-                result = query.getResultList();
+                CriteriaQuery<T> cq = criteriaQuery();
+                cq.where(cq.from(entityClass).get(Persistent_.guid).in(guids));
+                result = em.createQuery(cq).getResultList();
             } catch (Exception e) {
                 throw new ServiceException(EntityServiceErrors.FAILED_TO_GET_ENTITY_BY_GUIDS, e, entityName);
             }
@@ -356,31 +332,6 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
             if (entities != null && !entities.isEmpty()) {
                 for (int i = 0; i < entities.size(); i++) {
                     if (this.delete(entities.get(i))) {
-                        result = result + 1;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            throw new ServiceException(EntityServiceErrors.FAILED_TO_DELETE_ENTITY, e, entityName);
-        }
-        return result;
-    }
-
-    /**
-     * Performs delete operation on a list of entities. false is returned if one
-     * object fails to be deleted.
-     *
-     * @param guids the list of entities.
-     * @return {@code true} if all entities removed.
-     * @throws ServiceException if the method fails.
-     */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public int deleteByGuids(List<String> guids) throws ServiceException {
-        int result = 0;
-        try {
-            if (guids != null && !guids.isEmpty()) {
-                for (int i = 0; i < guids.size(); i++) {
-                    if (this.deleteByGuid(guids.get(i))) {
                         result = result + 1;
                     }
                 }
@@ -422,7 +373,7 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      */
     public List<T> find(Integer from, Integer count) throws ServiceException {
         try {
-            CriteriaQuery<T> cq = getCriteriaQuery();
+            CriteriaQuery<T> cq = criteriaQuery();
             cq.from(entityClass);
             TypedQuery<T> query = em.createQuery(cq);
             if (from != null) {
@@ -450,7 +401,7 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
     @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
     public int deleteQueryAll() throws ServiceException {
         try {
-            CriteriaQuery<T> cq = getCriteriaQuery();
+            CriteriaQuery<T> cq = criteriaQuery();
             cq.from(entityClass);
             int result = em.createQuery(cq).executeUpdate();
             em.flush();
@@ -468,21 +419,22 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      * @throws ServiceException if the method fails.
      */
     @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public boolean deleteQueryByGuid(String guid) throws ServiceException {
-        boolean result = false;
+    public boolean deleteByGuid(String guid) throws ServiceException {
         if (guid != null) {
             try {
-                CriteriaBuilder cb = em.getCriteriaBuilder();
-                CriteriaDelete<T> cq = cb.createCriteriaDelete(entityClass);
-                cq.where(cb.equal(cq.from(entityClass).get("guid"), guid));
+                CriteriaDelete<T> cq = deleteQuery();
+                cq.where(
+                        em.getCriteriaBuilder()
+                                .equal(cq.from(entityClass).get(Persistent_.guid), guid)
+                );
                 int count = em.createQuery(cq).executeUpdate();
                 em.flush();
-                result = count == 1;
+                return count == 1;
             } catch (Exception e) {
                 throw handleConstraint(e, EntityServiceErrors.FAILED_TO_DELETE_BY_GUID_QUERY);
             }
         }
-        return result;
+        return false;
     }
 
     /**
@@ -493,13 +445,11 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      * @throws ServiceException if the method fails.
      */
     @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public int deleteQueryByGuids(List<String> guids) throws ServiceException {
+    public int deleteByGuid(List<String> guids) throws ServiceException {
         try {
             if (guids != null && !guids.isEmpty()) {
-                CriteriaBuilder cb = em.getCriteriaBuilder();
-                CriteriaDelete<T> cq = cb.createCriteriaDelete(entityClass);
-                Root<T> root = cq.from(entityClass);
-                cq.where(root.get("guid").in(guids));
+                CriteriaDelete<T> cq = deleteQuery();
+                cq.where(cq.from(entityClass).get(Persistent_.guid).in(guids));
                 int result = em.createQuery(cq).executeUpdate();
                 em.flush();
                 return result;
@@ -524,28 +474,13 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
     /**
      * Loads all entities.
      *
-     * @param entityGraphName the entity graph name.
-     * @return the list loaded entities.
-     * @throws ServiceException if the method fails.
-     */
-    protected List<T> loadAll(String entityGraphName) throws ServiceException {
-        if (entityGraphName != null && !entityGraphName.isEmpty()) {
-            EntityGraph<?> entityGraph = em.getEntityGraph(entityGraphName);
-            return loadAll(entityGraph);
-        }
-        return Collections.emptyList();
-    }
-
-    /**
-     * Loads all entities.
-     *
      * @param entityGraph the entity graph.
      * @return the list loaded entities.
      * @throws ServiceException if the method fails.
      */
     protected List<T> loadAll(EntityGraph<?> entityGraph) throws ServiceException {
         try {
-            CriteriaQuery<T> cq = getCriteriaQuery();
+            CriteriaQuery<T> cq = criteriaQuery();
             cq.from(entityClass);
             cq.distinct(true);
             TypedQuery<T> query = em.createQuery(cq);
@@ -566,24 +501,8 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      * @throws ServiceException if the method fails.
      */
     @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public List<T> loadByGuids(List<String> guids) throws ServiceException {
-        return loadByGuids(guids, loadEntityGraph);
-    }
-
-    /**
-     * Loads all entities.
-     *
-     * @param guids           the set of GUIDs.
-     * @param entityGraphName the entity graph name.
-     * @return the list loaded entities.
-     * @throws ServiceException if the method fails.
-     */
-    protected List<T> loadByGuids(List<String> guids, String entityGraphName) throws ServiceException {
-        if (guids != null && entityGraphName != null && !entityGraphName.isEmpty()) {
-            EntityGraph<?> entityGraph = em.getEntityGraph(entityGraphName);
-            return loadByGuids(guids, entityGraph);
-        }
-        return null;
+    public List<T> loadByGuid(List<String> guids) throws ServiceException {
+        return loadByGuid(guids, loadEntityGraph);
     }
 
     /**
@@ -594,12 +513,12 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      * @return the list loaded entities.
      * @throws ServiceException if the method fails.
      */
-    protected List<T> loadByGuids(List<String> guids, EntityGraph<?> entityGraph) throws ServiceException {
+    protected List<T> loadByGuid(List<String> guids, EntityGraph<?> entityGraph) throws ServiceException {
         List<T> result = null;
         try {
             if (guids != null && !guids.isEmpty()) {
-                CriteriaQuery<T> cq = getCriteriaQuery();
-                cq.where(cq.from(entityClass).get("guid").in(guids));
+                CriteriaQuery<T> cq = criteriaQuery();
+                cq.where(cq.from(entityClass).get(Persistent_.guid).in(guids));
                 TypedQuery<T> query = em.createQuery(cq);
                 if (entityGraph != null) {
                     query.setHint(HINT_LOAD_GRAPH, entityGraph);
@@ -622,22 +541,6 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
     @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
     public T loadByGuid(String guid) throws ServiceException {
         return loadByGuid(guid, loadEntityGraph);
-    }
-
-    /**
-     * Loads the entity by GUID and entity graph name.
-     *
-     * @param guid            the GUID.
-     * @param entityGraphName the entity graph name.
-     * @return the entity.
-     * @throws ServiceException if the method fails.
-     */
-    protected T loadByGuid(String guid, String entityGraphName) throws ServiceException {
-        if (guid != null && entityGraphName != null && !entityGraphName.isEmpty()) {
-            EntityGraph<?> entityGraph = em.getEntityGraph(entityGraphName);
-            return loadByGuid(guid, entityGraph);
-        }
-        return null;
     }
 
     /**
@@ -699,32 +602,16 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
         return new ServiceException(key, ex, entityName);
     }
 
-
-    protected CriteriaQuery<T> getCriteriaQuery() {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        return cb.createQuery(entityClass);
+    protected CriteriaQuery<T> criteriaQuery() {
+        return this.em.getCriteriaBuilder().createQuery(this.entityClass);
     }
 
-    public TypedQuery<T> find(String query, QueryParam parameters) {
-        String lower = query.toLowerCase();
-
-        if (!lower.startsWith("from ")) {
-            query = "FROM " + entityName + " WHERE " + query;
-        }
-
-        TypedQuery<T> result = em.createQuery(query, entityClass);
-
-        // binding parameters
-        if (parameters != null) {
-            bindParameters(result, parameters.map());
-        }
-        return result;
+    protected CriteriaDelete<T> deleteQuery() {
+        return em.getCriteriaBuilder().createCriteriaDelete(entityClass);
     }
 
-    protected void bindParameters(Query query, Map<String, Object> parameters) {
-        if (parameters != null && !parameters.isEmpty()) {
-            parameters.forEach(query::setParameter);
-        }
+    protected CriteriaUpdate<T> updateQuery() {
+        return em.getCriteriaBuilder().createCriteriaUpdate(entityClass);
     }
 
     /**
@@ -744,7 +631,6 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
         PERSIST_ENTITY_FAILED,
         MERGE_ENTITY_FAILED,
         DELETE_ENTITY_FAILED,
-        DELETE_ENTITY_BY_GUID_FAILED,
         DELETE_ENTITIES_FAILED,
         FIND_ENTITY_BY_ID_FAILED,
         FIND_ALL_ENTITIES_FAILED,

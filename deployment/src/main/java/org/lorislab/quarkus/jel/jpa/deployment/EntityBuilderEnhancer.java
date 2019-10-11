@@ -7,34 +7,62 @@ import org.objectweb.asm.Type;
 
 import java.util.function.BiFunction;
 
-public class AbstractEntityBuilderEnhancer implements BiFunction<String, ClassVisitor, ClassVisitor> {
+/**
+ * The abstract  entity builder enhancer
+ */
+public class EntityBuilderEnhancer implements BiFunction<String, ClassVisitor, ClassVisitor> {
 
+    /**
+     * The entity class.
+     */
     private String entityClass;
 
+    /**
+     * The entity name.
+     */
     private String entityName;
 
-    public AbstractEntityBuilderEnhancer(String entityName, String entityClass) {
+    /**
+     * The default constructor.
+     *
+     * @param entityName  entity name.
+     * @param entityClass entity class.
+     */
+    public EntityBuilderEnhancer(String entityName, String entityClass) {
         this.entityClass = entityClass;
         this.entityName = entityName;
     }
 
+    /**
+     * {@inheritDoc }
+     */
     @Override
     public ClassVisitor apply(String className, ClassVisitor outputClassVisitor) {
-        return new AbstractEntityBuilderEnhancerClassVisitor(className, outputClassVisitor, entityName, entityClass);
+        return new EntityBuilderEnhancerClassVisitor(className, outputClassVisitor, entityName, entityClass);
     }
 
-    static class AbstractEntityBuilderEnhancerClassVisitor extends ClassVisitor {
-
+    /**
+     * The entity builder enhancer class visitor.
+     */
+    static class EntityBuilderEnhancerClassVisitor extends ClassVisitor {
+        /**
+         * The entity class.
+         */
         private String entityClass;
-
+        /**
+         * The entity name.
+         */
         private String entityName;
 
-        public AbstractEntityBuilderEnhancerClassVisitor(String className, ClassVisitor outputClassVisitor, String entityName, String entityClass) {
+        public EntityBuilderEnhancerClassVisitor(String className, ClassVisitor outputClassVisitor, String entityName, String entityClass) {
             super(Opcodes.ASM7, outputClassVisitor);
             this.entityClass = entityClass.replace('.', '/');
             this.entityName = entityName;
         }
 
+        /**
+         * {@inheritDoc }
+         */
         @Override
         public void visitEnd() {
 

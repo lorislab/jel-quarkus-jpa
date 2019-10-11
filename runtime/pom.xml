@@ -36,6 +36,11 @@
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
+                            <groupId>org.hibernate</groupId>
+                            <artifactId>hibernate-jpamodelgen</artifactId>
+                            <version>5.4.6.Final</version>
+                        </path>
+                        <path>
                             <groupId>io.quarkus</groupId>
                             <artifactId>quarkus-extension-processor</artifactId>
                             <version>${quarkus.version}</version>

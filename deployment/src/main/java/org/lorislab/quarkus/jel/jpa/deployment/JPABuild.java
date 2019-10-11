@@ -26,27 +26,52 @@ import org.lorislab.quarkus.jel.jpa.service.AbstractEntityService;
 
 import java.util.List;
 
-
+/**
+ * The JPA build extension.
+ */
 public class JPABuild {
 
+    /**
+     * The extension name.
+     */
     private static final String FEATURE_NAME = "jel-jpa";
 
-    private static final DotName DOTNAME_REPOSITORY = DotName.createSimple(AbstractEntityService.class.getName());
+    /**
+     * The abstract entity service class.
+     */
+    private static final DotName DOT_NAME_REPOSITORY = DotName.createSimple(AbstractEntityService.class.getName());
 
+    /**
+     * The entity class.
+     */
     private static final DotName ENTITY = DotName.createSimple("javax.persistence.Entity");
 
+    /**
+     * The name of the entity annotation attribute name.
+     */
     private static final String ATTRIBUTE_NAME = "name";
 
-
+    /**
+     * The extension name.
+     *
+     * @return the feature build item.
+     */
     @BuildStep
     FeatureBuildItem createFeatureItem() {
         return new FeatureBuildItem(FEATURE_NAME);
     }
 
+    /**
+     * Update entity dao services to have entity class name and entity name.
+     *
+     * @param index        the index.
+     * @param transformers the transformer
+     * @throws Exception if the method fails.
+     */
     @BuildStep
     void build(CombinedIndexBuildItem index, BuildProducer<BytecodeTransformerBuildItem> transformers) throws Exception {
 
-        for (ClassInfo classInfo : index.getIndex().getAllKnownSubclasses(DOTNAME_REPOSITORY)) {
+        for (ClassInfo classInfo : index.getIndex().getAllKnownSubclasses(DOT_NAME_REPOSITORY)) {
             if (classInfo.superClassType().kind() == Type.Kind.PARAMETERIZED_TYPE) {
                 Type entity = classInfo.superClassType().asParameterizedType().arguments().get(0);
                 ClassInfo ec = index.getIndex().getClassByName(entity.name());
@@ -65,7 +90,7 @@ public class JPABuild {
                     }
                 }
 
-                transformers.produce(new BytecodeTransformerBuildItem(classInfo.name().toString(), new AbstractEntityBuilderEnhancer(name, entity.name().toString())));
+                transformers.produce(new BytecodeTransformerBuildItem(classInfo.name().toString(), new EntityBuilderEnhancer(name, entity.name().toString())));
             }
         }
 

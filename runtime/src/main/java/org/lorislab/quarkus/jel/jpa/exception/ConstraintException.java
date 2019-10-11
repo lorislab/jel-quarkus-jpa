@@ -36,8 +36,8 @@ public class ConstraintException extends ServiceException {
      * @param params      the exception parameters.
      */
     public ConstraintException(String constraints, Enum<?> messageKey, Throwable cause, Serializable... params) {
-        super(true, messageKey, cause, params);
-        getNamedParameters().put(PARAMETER, constraints);
+        super(messageKey, cause, params);
+        addParameter(PARAMETER, constraints);
     }
 
     /**
@@ -46,7 +46,7 @@ public class ConstraintException extends ServiceException {
      * @return the constraints message.
      */
     public String getConstraints() {
-        return (String) getNamedParameters().get(PARAMETER);
+        return (String) namedParameters.get(PARAMETER);
     }
 
 }
