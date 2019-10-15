@@ -308,7 +308,7 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
         if (guids != null && !guids.isEmpty()) {
             try {
                 CriteriaQuery<T> cq = criteriaQuery();
-                cq.where(cq.from(entityClass).get(Persistent_.guid).in(guids));
+                cq.where(cq.from(entityClass).get(Persistent_.GUID).in(guids));
                 result = em.createQuery(cq).getResultList();
             } catch (Exception e) {
                 throw new ServiceException(EntityServiceErrors.FAILED_TO_GET_ENTITY_BY_GUIDS, e, entityName);
@@ -425,7 +425,7 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
                 CriteriaDelete<T> cq = deleteQuery();
                 cq.where(
                         em.getCriteriaBuilder()
-                                .equal(cq.from(entityClass).get(Persistent_.guid), guid)
+                                .equal(cq.from(entityClass).get(Persistent_.GUID), guid)
                 );
                 int count = em.createQuery(cq).executeUpdate();
                 em.flush();
@@ -449,7 +449,7 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
         try {
             if (guids != null && !guids.isEmpty()) {
                 CriteriaDelete<T> cq = deleteQuery();
-                cq.where(cq.from(entityClass).get(Persistent_.guid).in(guids));
+                cq.where(cq.from(entityClass).get(Persistent_.GUID).in(guids));
                 int result = em.createQuery(cq).executeUpdate();
                 em.flush();
                 return result;
@@ -518,7 +518,7 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
         try {
             if (guids != null && !guids.isEmpty()) {
                 CriteriaQuery<T> cq = criteriaQuery();
-                cq.where(cq.from(entityClass).get(Persistent_.guid).in(guids));
+                cq.where(cq.from(entityClass).get(Persistent_.GUID).in(guids));
                 TypedQuery<T> query = em.createQuery(cq);
                 if (entityGraph != null) {
                     query.setHint(HINT_LOAD_GRAPH, entityGraph);

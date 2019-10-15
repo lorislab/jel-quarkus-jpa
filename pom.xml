@@ -46,7 +46,7 @@
     </modules>
 
     <properties>
-        <quarkus.version>0.23.2</quarkus.version>
+        <quarkus.version>0.24.0</quarkus.version>
         <testcontainers.version>1.11.4</testcontainers.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>        

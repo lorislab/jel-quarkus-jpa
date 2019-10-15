@@ -10,7 +10,7 @@ import java.util.function.BiFunction;
 /**
  * The abstract  entity builder enhancer
  */
-public class EntityBuilderEnhancer implements BiFunction<String, ClassVisitor, ClassVisitor> {
+public class EntityServiceBuilderEnhancer implements BiFunction<String, ClassVisitor, ClassVisitor> {
 
     /**
      * The entity class.
@@ -28,7 +28,7 @@ public class EntityBuilderEnhancer implements BiFunction<String, ClassVisitor, C
      * @param entityName  entity name.
      * @param entityClass entity class.
      */
-    public EntityBuilderEnhancer(String entityName, String entityClass) {
+    public EntityServiceBuilderEnhancer(String entityName, String entityClass) {
         this.entityClass = entityClass;
         this.entityName = entityName;
     }
@@ -38,13 +38,13 @@ public class EntityBuilderEnhancer implements BiFunction<String, ClassVisitor, C
      */
     @Override
     public ClassVisitor apply(String className, ClassVisitor outputClassVisitor) {
-        return new EntityBuilderEnhancerClassVisitor(className, outputClassVisitor, entityName, entityClass);
+        return new EntityServiceBuilderEnhancerClassVisitor(className, outputClassVisitor, entityName, entityClass);
     }
 
     /**
      * The entity builder enhancer class visitor.
      */
-    static class EntityBuilderEnhancerClassVisitor extends ClassVisitor {
+    static class EntityServiceBuilderEnhancerClassVisitor extends ClassVisitor {
         /**
          * The entity class.
          */
@@ -54,7 +54,7 @@ public class EntityBuilderEnhancer implements BiFunction<String, ClassVisitor, C
          */
         private String entityName;
 
-        public EntityBuilderEnhancerClassVisitor(String className, ClassVisitor outputClassVisitor, String entityName, String entityClass) {
+        public EntityServiceBuilderEnhancerClassVisitor(String className, ClassVisitor outputClassVisitor, String entityName, String entityClass) {
             super(Opcodes.ASM7, outputClassVisitor);
             this.entityClass = entityClass.replace('.', '/');
             this.entityName = entityName;

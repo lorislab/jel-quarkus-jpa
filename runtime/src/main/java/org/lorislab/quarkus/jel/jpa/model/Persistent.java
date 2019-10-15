@@ -39,14 +39,14 @@ public class Persistent implements Serializable {
      * The persisted flag.
      */
     @Transient
-    public boolean persisted;
+    private boolean persisted;
 
     /**
      * The version attribute.
      */
     @Version
     @Column(name = "C_OPLOCK")
-    public Integer version;
+    private Integer version;
 
     /**
      * The entity life-cycle method.
@@ -63,7 +63,7 @@ public class Persistent implements Serializable {
      */
     @Id
     @Column(name = "C_GUID")
-    public String guid = UUID.randomUUID().toString();
+    private String guid = UUID.randomUUID().toString();
 
     /**
      * {@inheritDoc}
@@ -103,5 +103,29 @@ public class Persistent implements Serializable {
     @Override
     public String toString() {
         return this.getClass().getSimpleName() + ":" + this.guid;
+    }
+
+    public String getGuid() {
+        return guid;
+    }
+
+    public void setGuid(String guid) {
+        this.guid = guid;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+    public boolean isPersisted() {
+        return persisted;
+    }
+
+    public void setPersisted(boolean persisted) {
+        this.persisted = persisted;
     }
 }

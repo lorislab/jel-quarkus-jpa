@@ -90,7 +90,7 @@ public class JPABuild {
                     }
                 }
 
-                transformers.produce(new BytecodeTransformerBuildItem(classInfo.name().toString(), new EntityBuilderEnhancer(name, entity.name().toString())));
+                transformers.produce(new BytecodeTransformerBuildItem(classInfo.name().toString(), new EntityServiceBuilderEnhancer(name, entity.name().toString())));
             }
         }
 

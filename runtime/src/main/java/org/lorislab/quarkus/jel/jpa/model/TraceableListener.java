@@ -49,11 +49,11 @@ public class TraceableListener implements Serializable {
     @PrePersist
     public void prePersist(PersistentTraceable entity) {
         if (principal != null) {
-            entity.creationUser = principal.getName();
-            entity.modificationUser = entity.creationUser;
+            entity.setCreationUser(principal.getName());
+            entity.setModificationUser(entity.getCreationUser());
         }
-        entity.creationDate = new Date();
-        entity.modificationDate = entity.creationDate;
+        entity.setCreationDate(new Date());
+        entity.setModificationDate(entity.getCreationDate());
     }
 
     /**
@@ -64,9 +64,9 @@ public class TraceableListener implements Serializable {
     @PreUpdate
     public void preUpdate(PersistentTraceable entity) {
         if (principal != null) {
-            entity.modificationUser = principal.getName();
+            entity.setModificationUser(principal.getName());
         }
-        entity.modificationDate = new Date();
+        entity.setCreationDate(new Date());
     }
 
 }
