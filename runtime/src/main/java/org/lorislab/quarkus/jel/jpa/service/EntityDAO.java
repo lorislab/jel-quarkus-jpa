@@ -1,6 +1,6 @@
 package org.lorislab.quarkus.jel.jpa.service;
 
-public interface EntityService {
+public interface EntityDAO {
 
     default Class getEntityClass() {
         return null;

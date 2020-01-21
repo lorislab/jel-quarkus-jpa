@@ -22,9 +22,14 @@ import io.quarkus.deployment.builditem.BytecodeTransformerBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import org.jboss.jandex.*;
-import org.lorislab.quarkus.jel.jpa.service.AbstractEntityService;
+import org.lorislab.quarkus.jel.jpa.service.AbstractEntityDAO;
 
+import javax.persistence.Entity;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import static org.lorislab.quarkus.jel.jpa.deployment.PersistentModelEnhancer.*;
 
 /**
  * The JPA build extension.
@@ -39,12 +44,12 @@ public class JPABuild {
     /**
      * The abstract entity service class.
      */
-    private static final DotName DOT_NAME_REPOSITORY = DotName.createSimple(AbstractEntityService.class.getName());
+    private static final DotName DOT_NAME_REPOSITORY = DotName.createSimple(AbstractEntityDAO.class.getName());
 
     /**
      * The entity class.
      */
-    private static final DotName ENTITY = DotName.createSimple("javax.persistence.Entity");
+    private static final DotName ENTITY = DotName.createSimple(Entity.class.getName());
 
     /**
      * The name of the entity annotation attribute name.
@@ -69,7 +74,8 @@ public class JPABuild {
      * @throws Exception if the method fails.
      */
     @BuildStep
-    void build(CombinedIndexBuildItem index, BuildProducer<BytecodeTransformerBuildItem> transformers) throws Exception {
+    void build(CombinedIndexBuildItem index,
+               BuildProducer<BytecodeTransformerBuildItem> transformers) throws Exception {
 
         for (ClassInfo classInfo : index.getIndex().getAllKnownSubclasses(DOT_NAME_REPOSITORY)) {
             if (classInfo.superClassType().kind() == Type.Kind.PARAMETERIZED_TYPE) {
@@ -89,11 +95,26 @@ public class JPABuild {
                         }
                     }
                 }
-
-                transformers.produce(new BytecodeTransformerBuildItem(classInfo.name().toString(), new EntityServiceBuilderEnhancer(name, entity.name().toString())));
+                transformers.produce(new BytecodeTransformerBuildItem(classInfo.name().toString(), new EntityDAOBuilderEnhancer(name, entity.name().toString())));
             }
         }
 
+
+        PersistentModelEnhancer modelEnhancer = new PersistentModelEnhancer(index.getIndex());
+        Set<String> modelClasses = new HashSet<>();
+        for (ClassInfo ci : index.getIndex().getAllKnownSubclasses(DOT_NAME_PERSISTENT)) {
+            if (ci.name().equals(DOT_NAME_PERSISTENT_TRACEABLE))
+                continue;
+            if (modelClasses.add(ci.name().toString()))
+                modelEnhancer.collectFields(ci);
+        }
+        for (ClassInfo classInfo : index.getIndex().getAllKnownSubclasses(DOT_NAME_PERSISTENT_TRACEABLE)) {
+            if (modelClasses.add(classInfo.name().toString()))
+                modelEnhancer.collectFields(classInfo);
+        }
+        for (String modelClass : modelClasses) {
+            transformers.produce(new BytecodeTransformerBuildItem(modelClass, modelEnhancer));
+        }
     }
 
 

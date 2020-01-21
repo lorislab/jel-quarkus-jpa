@@ -46,7 +46,7 @@
     </modules>
 
     <properties>
-        <quarkus.version>0.24.0</quarkus.version>
+        <quarkus.version>1.1.1.Final</quarkus.version>
         <testcontainers.version>1.11.4</testcontainers.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>        
@@ -70,6 +70,17 @@
                  <artifactId>quarkus-core-deployment</artifactId>
                  <version>${quarkus.version}</version>
              </dependency>
+             <dependency>
+                 <groupId>io.quarkus</groupId>
+                 <artifactId>quarkus-panache-common-deployment</artifactId>
+                 <version>${quarkus.version}</version>
+             </dependency>
+             <dependency>
+                 <groupId>io.quarkus</groupId>
+                 <artifactId>quarkus-hibernate-orm-deployment</artifactId>
+                 <version>${quarkus.version}</version>
+             </dependency>
+
             <dependency>
                 <groupId>jakarta.platform</groupId>
                 <artifactId>jakarta.jakartaee-api</artifactId>

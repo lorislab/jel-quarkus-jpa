@@ -15,10 +15,8 @@
  */
 package org.lorislab.quarkus.jel.jpa.model;
 
-import java.io.Serializable;
-import java.util.UUID;
-
 import javax.persistence.*;
+import java.util.UUID;
 
 /**
  * String GUID Persistent entity implementation.
@@ -28,25 +26,20 @@ import javax.persistence.*;
  * @author Andrej Petras
  */
 @MappedSuperclass
-public class Persistent implements Serializable {
-
-    /**
-     * The UID for this class.
-     */
-    private static final long serialVersionUID = -6081185800586714162L;
+public class Persistent {
 
     /**
      * The persisted flag.
      */
     @Transient
-    private boolean persisted;
+    public boolean persisted;
 
     /**
      * The version attribute.
      */
     @Version
     @Column(name = "C_OPLOCK")
-    private Integer version;
+    public Integer version;
 
     /**
      * The entity life-cycle method.
@@ -63,7 +56,7 @@ public class Persistent implements Serializable {
      */
     @Id
     @Column(name = "C_GUID")
-    private String guid = UUID.randomUUID().toString();
+    public String guid = UUID.randomUUID().toString();
 
     /**
      * {@inheritDoc}
@@ -105,27 +98,4 @@ public class Persistent implements Serializable {
         return this.getClass().getSimpleName() + ":" + this.guid;
     }
 
-    public String getGuid() {
-        return guid;
-    }
-
-    public void setGuid(String guid) {
-        this.guid = guid;
-    }
-
-    public Integer getVersion() {
-        return version;
-    }
-
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
-
-    public boolean isPersisted() {
-        return persisted;
-    }
-
-    public void setPersisted(boolean persisted) {
-        this.persisted = persisted;
-    }
 }

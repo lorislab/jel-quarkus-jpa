@@ -15,31 +15,24 @@
  */
 package org.lorislab.quarkus.jel.jpa.model;
 
-import java.io.Serializable;
-import java.security.Principal;
-import java.util.Date;
-
 import javax.inject.Inject;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
+import java.security.Principal;
+import java.util.Date;
 
 /**
  * The traceable entity listener.
  *
  * @author Andrej Petras
  */
-public class TraceableListener implements Serializable {
+public class TraceableListener {
 
     /**
      * The principal
      */
     @Inject
     Principal principal;
-
-    /**
-     * The UID for this class.
-     */
-    private static final long serialVersionUID = -7253672246009843767L;
 
     /**
      * Marks the entity as created.
@@ -49,11 +42,11 @@ public class TraceableListener implements Serializable {
     @PrePersist
     public void prePersist(PersistentTraceable entity) {
         if (principal != null) {
-            entity.setCreationUser(principal.getName());
-            entity.setModificationUser(entity.getCreationUser());
+            entity.creationUser = principal.getName();
+            entity.modificationUser = entity.creationUser;
         }
-        entity.setCreationDate(new Date());
-        entity.setModificationDate(entity.getCreationDate());
+        entity.creationDate = new Date();
+        entity.modificationDate = entity.creationDate;
     }
 
     /**
@@ -64,9 +57,9 @@ public class TraceableListener implements Serializable {
     @PreUpdate
     public void preUpdate(PersistentTraceable entity) {
         if (principal != null) {
-            entity.setModificationUser(principal.getName());
+            entity.modificationUser = principal.getName();
         }
-        entity.setCreationDate(new Date());
+        entity.modificationDate = new Date();
     }
 
 }

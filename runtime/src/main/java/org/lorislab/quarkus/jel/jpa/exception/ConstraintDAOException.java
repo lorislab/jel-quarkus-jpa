@@ -20,7 +20,7 @@ import java.io.Serializable;
 /**
  * The constraint exception.
  */
-public class ConstraintException extends ServiceException {
+public class ConstraintDAOException extends DAOException {
 
     /**
      * The constraints parameter key.
@@ -35,7 +35,7 @@ public class ConstraintException extends ServiceException {
      * @param cause       the cause exception.
      * @param params      the exception parameters.
      */
-    public ConstraintException(String constraints, Enum<?> messageKey, Throwable cause, Serializable... params) {
+    public ConstraintDAOException(String constraints, Enum<?> messageKey, Throwable cause, Serializable... params) {
         super(messageKey, cause, params);
         addParameter(PARAMETER, constraints);
     }

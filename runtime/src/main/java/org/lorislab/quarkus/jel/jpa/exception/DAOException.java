@@ -23,7 +23,7 @@ import java.util.*;
  *
  * @author Andrej Petras
  */
-public class ServiceException extends Exception {
+public class DAOException extends Exception {
 
     /**
      * The key of resource.
@@ -44,7 +44,7 @@ public class ServiceException extends Exception {
      * @param parameters    the resource key arguments.
      * @param cause         the throw able cause.
      */
-    public ServiceException(final Enum key, final Throwable cause, Serializable... parameters) {
+    public DAOException(final Enum key, final Throwable cause, Serializable... parameters) {
         super(cause);
         this.key = key;
         if (parameters != null && parameters.length > 0) {

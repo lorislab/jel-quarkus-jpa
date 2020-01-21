@@ -8,9 +8,9 @@ import org.objectweb.asm.Type;
 import java.util.function.BiFunction;
 
 /**
- * The abstract  entity builder enhancer
+ * The abstract  entity DAO enhancer
  */
-public class EntityServiceBuilderEnhancer implements BiFunction<String, ClassVisitor, ClassVisitor> {
+public class EntityDAOBuilderEnhancer implements BiFunction<String, ClassVisitor, ClassVisitor> {
 
     /**
      * The entity class.
@@ -28,7 +28,7 @@ public class EntityServiceBuilderEnhancer implements BiFunction<String, ClassVis
      * @param entityName  entity name.
      * @param entityClass entity class.
      */
-    public EntityServiceBuilderEnhancer(String entityName, String entityClass) {
+    public EntityDAOBuilderEnhancer(String entityName, String entityClass) {
         this.entityClass = entityClass;
         this.entityName = entityName;
     }

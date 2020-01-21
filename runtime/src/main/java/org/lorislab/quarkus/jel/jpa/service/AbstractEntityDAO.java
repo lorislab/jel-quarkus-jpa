@@ -15,8 +15,8 @@
  */
 package org.lorislab.quarkus.jel.jpa.service;
 
-import org.lorislab.quarkus.jel.jpa.exception.ConstraintException;
-import org.lorislab.quarkus.jel.jpa.exception.ServiceException;
+import org.lorislab.quarkus.jel.jpa.exception.ConstraintDAOException;
+import org.lorislab.quarkus.jel.jpa.exception.DAOException;
 import org.lorislab.quarkus.jel.jpa.model.Persistent;
 import org.lorislab.quarkus.jel.jpa.model.Persistent_;
 import org.slf4j.Logger;
@@ -35,10 +35,10 @@ import java.util.*;
  * @param <T> the entity class.
  * @author Andrej Petras
  */
-@Transactional(value = Transactional.TxType.NOT_SUPPORTED, rollbackOn = ServiceException.class)
-public abstract class AbstractEntityService<T extends Persistent> implements EntityService {
+@Transactional(value = Transactional.TxType.NOT_SUPPORTED, rollbackOn = DAOException.class)
+public abstract class AbstractEntityDAO<T extends Persistent> implements EntityDAO {
 
-    private static final Logger log = LoggerFactory.getLogger(AbstractEntityService.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractEntityDAO.class);
 
     /**
      * The property hint is javax.persistence.fetchgraph.
@@ -66,16 +66,6 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
     protected String entityName;
 
     /**
-     * The load entity graph.
-     */
-    private EntityGraph<? super T> loadEntityGraph;
-
-    /**
-     * The criteria builder.
-     */
-    protected CriteriaBuilder cb;
-
-    /**
      * Initialize the entity service bean.
      */
     @PostConstruct
@@ -84,33 +74,17 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
         String serviceClass = getClass().getName();
         entityClass = getEntityClass();
         entityName = getEntityName();
-        log.info("Initialize the entity service {} for entity {}/{}", serviceClass, entityClass, entityName);
-
-        EntityGraph<? super T> graph = null;
-        if (entityClass != null) {
-            String loadName = entityName + ".load";
-
-            List<EntityGraph<? super T>> graphs = em.getEntityGraphs(entityClass);
-            if (graphs != null) {
-                for (int i = 0; i < graphs.size() && graph == null; i++) {
-                    if (graphs.get(i).getName().equals(loadName)) {
-                        graph = graphs.get(i);
-                    }
-                }
-            }
-        }
-        loadEntityGraph = graph;
-        cb = em.getCriteriaBuilder();
+        log.debug("Initialize the entity service {} for entity {}/{}", serviceClass, entityClass, entityName);
     }
 
     /**
      * Gets all entities.
      *
      * @return the list of all entities.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
     @SuppressWarnings("unchecked")
-    protected List<T> findAll() throws ServiceException {
+    protected List<T> findAll() throws DAOException {
         try {
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<T> cq = cb.createQuery(entityClass);
@@ -118,7 +92,7 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
             TypedQuery<T> query = em.createQuery(cq);
             return query.getResultList();
         } catch (Exception e) {
-            throw new ServiceException(EntityServiceErrors.FIND_ALL_ENTITIES_FAILED, e);
+            throw new DAOException(EntityServiceErrors.FIND_ALL_ENTITIES_FAILED, e);
         }
     }
 
@@ -127,15 +101,15 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      *
      * @param guid the entity GUID.
      * @return the entity corresponding to the GUID.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
     @SuppressWarnings("unchecked")
-    @Transactional(value = Transactional.TxType.SUPPORTS, rollbackOn = ServiceException.class)
-    public T findByGuid(final String guid) throws ServiceException {
+    @Transactional(value = Transactional.TxType.SUPPORTS, rollbackOn = DAOException.class)
+    public T findByGuid(final String guid) throws DAOException {
         try {
             return em.find(entityClass, guid);
         } catch (Exception e) {
-            throw new ServiceException(EntityServiceErrors.FIND_ENTITY_BY_ID_FAILED, e);
+            throw new DAOException(EntityServiceErrors.FIND_ENTITY_BY_ID_FAILED, e);
         }
     }
 
@@ -144,10 +118,10 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      *
      * @param entity the entity.
      * @return the updated entity.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public T update(T entity) throws ServiceException {
+    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = DAOException.class)
+    public T update(T entity) throws DAOException {
         try {
             T result = em.merge(entity);
             em.flush();
@@ -162,11 +136,11 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      *
      * @param entities the list of entities.
      * @return the list of updated entities.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
     @SuppressWarnings("unchecked")
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public List<T> update(List<T> entities) throws ServiceException {
+    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = DAOException.class)
+    public List<T> update(List<T> entities) throws DAOException {
         if (entities != null) {
             try {
                 final List<T> result = new ArrayList<>(entities.size());
@@ -185,10 +159,10 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      *
      * @param entity the entity.
      * @return the created entity.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public T create(T entity) throws ServiceException {
+    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = DAOException.class)
+    public T create(T entity) throws DAOException {
         try {
             em.persist(entity);
             em.flush();
@@ -203,10 +177,10 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      *
      * @param entities the list of enties.
      * @return list of created entities.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public List<T> create(List<T> entities) throws ServiceException {
+    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = DAOException.class)
+    public List<T> create(List<T> entities) throws DAOException {
         if (entities != null) {
             try {
                 entities.forEach(em::persist);
@@ -232,10 +206,10 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      *
      * @param entity the entity.
      * @return <code>true</code> if the entity was correctly deleted.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public boolean delete(T entity) throws ServiceException {
+    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = DAOException.class)
+    public boolean delete(T entity) throws DAOException {
         try {
             if (entity != null) {
                 em.remove(entity);
@@ -254,10 +228,10 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      *
      * @param entities the list of entities.
      * @return the delete flag.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public boolean deleteAll(List<T> entities) throws ServiceException {
+    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = DAOException.class)
+    public boolean deleteAll(List<T> entities) throws DAOException {
         try {
             if (entities != null && !entities.isEmpty()) {
                 entities.forEach(e -> em.remove(e));
@@ -300,10 +274,10 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      *
      * @param guids the set of GUIDs.
      * @return the corresponding list of entities.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public List<T> findByGuid(List<String> guids) throws ServiceException {
+    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = DAOException.class)
+    public List<T> findByGuid(List<String> guids) throws DAOException {
         List<T> result = null;
         if (guids != null && !guids.isEmpty()) {
             try {
@@ -311,7 +285,7 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
                 cq.where(cq.from(entityClass).get(Persistent_.GUID).in(guids));
                 result = em.createQuery(cq).getResultList();
             } catch (Exception e) {
-                throw new ServiceException(EntityServiceErrors.FAILED_TO_GET_ENTITY_BY_GUIDS, e, entityName);
+                throw new DAOException(EntityServiceErrors.FAILED_TO_GET_ENTITY_BY_GUIDS, e, entityName);
             }
         }
         return result;
@@ -323,10 +297,10 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      *
      * @param entities the list of entities.
      * @return {@code true} if all entities removed.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public int delete(List<T> entities) throws ServiceException {
+    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = DAOException.class)
+    public int delete(List<T> entities) throws DAOException {
         int result = 0;
         try {
             if (entities != null && !entities.isEmpty()) {
@@ -337,7 +311,7 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
                 }
             }
         } catch (Exception e) {
-            throw new ServiceException(EntityServiceErrors.FAILED_TO_DELETE_ENTITY, e, entityName);
+            throw new DAOException(EntityServiceErrors.FAILED_TO_DELETE_ENTITY, e, entityName);
         }
         return result;
     }
@@ -347,10 +321,10 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      * object fails to be deleted.
      *
      * @return {@code true} if all entities removed.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public int deleteAll() throws ServiceException {
+    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = DAOException.class)
+    public int deleteAll() throws DAOException {
         int result = 0;
         try {
             List<T> tmp = findAll();
@@ -358,7 +332,7 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
                 result = delete(tmp);
             }
         } catch (Exception e) {
-            throw new ServiceException(EntityServiceErrors.FAILED_TO_DELETE_ALL, e, entityName);
+            throw new DAOException(EntityServiceErrors.FAILED_TO_DELETE_ALL, e, entityName);
         }
         return result;
     }
@@ -369,9 +343,9 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      * @param from  the from index.
      * @param count the count index.
      * @return the corresponding list of the entities.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
-    public List<T> find(Integer from, Integer count) throws ServiceException {
+    public List<T> find(Integer from, Integer count) throws DAOException {
         try {
             CriteriaQuery<T> cq = criteriaQuery();
             cq.from(entityClass);
@@ -388,7 +362,7 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
             }
             return query.getResultList();
         } catch (Exception e) {
-            throw new ServiceException(EntityServiceErrors.FAILED_TO_GET_ALL_ENTITIES, e, entityName, from, count);
+            throw new DAOException(EntityServiceErrors.FAILED_TO_GET_ALL_ENTITIES, e, entityName, from, count);
         }
     }
 
@@ -396,10 +370,10 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      * Removes all entities. Check on existence is made.
      *
      * @return the number of deleted entities.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public int deleteQueryAll() throws ServiceException {
+    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = DAOException.class)
+    public int deleteQueryAll() throws DAOException {
         try {
             CriteriaQuery<T> cq = criteriaQuery();
             cq.from(entityClass);
@@ -416,10 +390,10 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      *
      * @param guid the GUID of the entity
      * @return true if removed.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public boolean deleteByGuid(String guid) throws ServiceException {
+    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = DAOException.class)
+    public boolean deleteByGuid(String guid) throws DAOException {
         if (guid != null) {
             try {
                 CriteriaDelete<T> cq = deleteQuery();
@@ -442,10 +416,10 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      *
      * @param guids the set of GUIDs.
      * @return the number of deleted entities.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public int deleteByGuid(List<String> guids) throws ServiceException {
+    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = DAOException.class)
+    public int deleteByGuid(List<String> guids) throws DAOException {
         try {
             if (guids != null && !guids.isEmpty()) {
                 CriteriaDelete<T> cq = deleteQuery();
@@ -463,22 +437,11 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
     /**
      * Loads all entities.
      *
-     * @return the list loaded entities.
-     * @throws ServiceException if the method fails.
-     */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public List<T> loadAll() throws ServiceException {
-        return loadAll(loadEntityGraph);
-    }
-
-    /**
-     * Loads all entities.
-     *
      * @param entityGraph the entity graph.
      * @return the list loaded entities.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
-    protected List<T> loadAll(EntityGraph<?> entityGraph) throws ServiceException {
+    protected List<T> loadAll(EntityGraph<?> entityGraph) throws DAOException {
         try {
             CriteriaQuery<T> cq = criteriaQuery();
             cq.from(entityClass);
@@ -489,20 +452,8 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
             }
             return query.getResultList();
         } catch (Exception e) {
-            throw new ServiceException(EntityServiceErrors.FAILED_TO_LOAD_ALL_ENTITIES, e, entityName, entityGraph == null ? null : entityGraph.getName());
+            throw new DAOException(EntityServiceErrors.FAILED_TO_LOAD_ALL_ENTITIES, e, entityName, entityGraph == null ? null : entityGraph.getName());
         }
-    }
-
-    /**
-     * Loads all entities.
-     *
-     * @param guids the set of GUIDs.
-     * @return the list loaded entities.
-     * @throws ServiceException if the method fails.
-     */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public List<T> loadByGuid(List<String> guids) throws ServiceException {
-        return loadByGuid(guids, loadEntityGraph);
     }
 
     /**
@@ -511,9 +462,9 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      * @param guids       the set of GUIDs.
      * @param entityGraph the entity graph.
      * @return the list loaded entities.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
-    protected List<T> loadByGuid(List<String> guids, EntityGraph<?> entityGraph) throws ServiceException {
+    protected List<T> loadByGuid(List<String> guids, EntityGraph<?> entityGraph) throws DAOException {
         List<T> result = null;
         try {
             if (guids != null && !guids.isEmpty()) {
@@ -526,21 +477,9 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
                 result = query.getResultList();
             }
         } catch (Exception e) {
-            throw new ServiceException(EntityServiceErrors.FAILED_TO_LOAD_GUIDS_ENTITIES, e, entityName, entityGraph == null ? null : entityGraph.getName());
+            throw new DAOException(EntityServiceErrors.FAILED_TO_LOAD_GUIDS_ENTITIES, e, entityName, entityGraph == null ? null : entityGraph.getName());
         }
         return result;
-    }
-
-    /**
-     * Loads the entity by GUID.
-     *
-     * @param guid the GUID.
-     * @return the entity.
-     * @throws ServiceException if the method fails.
-     */
-    @Transactional(value = Transactional.TxType.REQUIRED, rollbackOn = ServiceException.class)
-    public T loadByGuid(String guid) throws ServiceException {
-        return loadByGuid(guid, loadEntityGraph);
     }
 
     /**
@@ -549,9 +488,9 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      * @param guid        the GUID.
      * @param entityGraph the entity graph.
      * @return the entity.
-     * @throws ServiceException if the method fails.
+     * @throws DAOException if the method fails.
      */
-    protected T loadByGuid(String guid, EntityGraph<?> entityGraph) throws ServiceException {
+    protected T loadByGuid(String guid, EntityGraph<?> entityGraph) throws DAOException {
         if (guid != null) {
             try {
                 Map<String, Object> properties = new HashMap<>();
@@ -560,7 +499,7 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
                 }
                 return em.find(entityClass, guid, properties);
             } catch (Exception e) {
-                throw new ServiceException(EntityServiceErrors.FAILED_TO_LOAD_ENTITY_BY_GUID, e, entityName, guid, entityGraph == null ? null : entityGraph.getName());
+                throw new DAOException(EntityServiceErrors.FAILED_TO_LOAD_ENTITY_BY_GUID, e, entityName, guid, entityGraph == null ? null : entityGraph.getName());
             }
         }
         return null;
@@ -574,9 +513,9 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
      * @return the corresponding service exception.
      */
     @SuppressWarnings("squid:S1872")
-    protected ServiceException handleConstraint(Exception ex, Enum<?> key) {
-        if (ex instanceof ConstraintException) {
-            return (ConstraintException) ex;
+    protected DAOException handleConstraint(Exception ex, Enum<?> key) {
+        if (ex instanceof ConstraintDAOException) {
+            return (ConstraintDAOException) ex;
         }
         if (ex instanceof PersistenceException) {
             PersistenceException e = (PersistenceException) ex;
@@ -595,11 +534,11 @@ public abstract class AbstractEntityService<T extends Persistent> implements Ent
                         }
                     }
                     // throw own constraints exception.
-                    return new ConstraintException(msg, key, e, entityName);
+                    return new ConstraintDAOException(msg, key, e, entityName);
                 }
             }
         }
-        return new ServiceException(key, ex, entityName);
+        return new DAOException(key, ex, entityName);
     }
 
     protected CriteriaQuery<T> criteriaQuery() {
