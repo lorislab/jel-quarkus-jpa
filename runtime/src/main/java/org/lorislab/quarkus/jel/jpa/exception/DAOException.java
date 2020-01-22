@@ -23,7 +23,7 @@ import java.util.*;
  *
  * @author Andrej Petras
  */
-public class DAOException extends Exception {
+public class DAOException extends RuntimeException {
 
     /**
      * The key of resource.
