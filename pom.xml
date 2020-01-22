@@ -6,7 +6,7 @@
     
     <groupId>org.lorislab.quarkus</groupId>
     <artifactId>jel-quarkus-jpa-parent</artifactId>
-    <version>0.10.0-SNAPSHOT</version>
+    <version>0.11.0-SNAPSHOT</version>
     <name>jel-quarkus-jpa-parent</name>
     <packaging>pom</packaging>
 
