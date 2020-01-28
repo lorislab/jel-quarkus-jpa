@@ -22,8 +22,6 @@ import java.util.UUID;
  * String GUID Persistent entity implementation.
  * <p>
  * The implementation class for Persistent interface.
- *
- * @author Andrej Petras
  */
 @MappedSuperclass
 public class Persistent {
@@ -32,14 +30,14 @@ public class Persistent {
      * The persisted flag.
      */
     @Transient
-    public boolean persisted;
+    private boolean persisted;
 
     /**
      * The version attribute.
      */
     @Version
     @Column(name = "C_OPLOCK")
-    public Integer version;
+    private Integer version;
 
     /**
      * The entity life-cycle method.
@@ -56,7 +54,31 @@ public class Persistent {
      */
     @Id
     @Column(name = "C_GUID")
-    public String guid = UUID.randomUUID().toString();
+    private String guid = UUID.randomUUID().toString();
+
+    public String getGuid() {
+        return guid;
+    }
+
+    public void setGuid(String guid) {
+        this.guid = guid;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+    public boolean isPersisted() {
+        return persisted;
+    }
+
+    public void setPersisted(boolean persisted) {
+        this.persisted = persisted;
+    }
 
     /**
      * {@inheritDoc}

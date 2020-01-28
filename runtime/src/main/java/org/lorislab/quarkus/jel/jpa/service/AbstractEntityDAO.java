@@ -34,7 +34,6 @@ import java.util.*;
  * The abstract EAO service class using an entity type.
  *
  * @param <T> the entity class.
- * @author Andrej Petras
  */
 @Transactional(value = Transactional.TxType.NOT_SUPPORTED, rollbackOn = DAOException.class)
 public abstract class AbstractEntityDAO<T extends Persistent> implements EntityDAO {
@@ -192,8 +191,10 @@ public abstract class AbstractEntityDAO<T extends Persistent> implements EntityD
             if (flush) {
                 em.flush();
             }
+            System.out.println("******************* update: " + result);
             return result;
         } catch (Exception e) {
+            e.printStackTrace();
             throw handleConstraint(e, EntityServiceErrors.MERGE_ENTITY_FAILED);
         }
     }

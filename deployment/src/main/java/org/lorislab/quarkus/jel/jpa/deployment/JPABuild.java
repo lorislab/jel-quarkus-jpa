@@ -25,11 +25,7 @@ import org.jboss.jandex.*;
 import org.lorislab.quarkus.jel.jpa.service.AbstractEntityDAO;
 
 import javax.persistence.Entity;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-
-import static org.lorislab.quarkus.jel.jpa.deployment.PersistentModelEnhancer.*;
 
 /**
  * The JPA build extension.
@@ -97,23 +93,6 @@ public class JPABuild {
                 }
                 transformers.produce(new BytecodeTransformerBuildItem(classInfo.name().toString(), new EntityDAOBuilderEnhancer(name, entity.name().toString())));
             }
-        }
-
-
-        PersistentModelEnhancer modelEnhancer = new PersistentModelEnhancer(index.getIndex());
-        Set<String> modelClasses = new HashSet<>();
-        for (ClassInfo ci : index.getIndex().getAllKnownSubclasses(DOT_NAME_PERSISTENT)) {
-            if (ci.name().equals(DOT_NAME_PERSISTENT_TRACEABLE))
-                continue;
-            if (modelClasses.add(ci.name().toString()))
-                modelEnhancer.collectFields(ci);
-        }
-        for (ClassInfo classInfo : index.getIndex().getAllKnownSubclasses(DOT_NAME_PERSISTENT_TRACEABLE)) {
-            if (modelClasses.add(classInfo.name().toString()))
-                modelEnhancer.collectFields(classInfo);
-        }
-        for (String modelClass : modelClasses) {
-            transformers.produce(new BytecodeTransformerBuildItem(modelClass, modelEnhancer));
         }
     }
 

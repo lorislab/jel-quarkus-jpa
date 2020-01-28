@@ -23,8 +23,6 @@ import javax.persistence.*;
  * Traceable persistent entity implementation.
  * <p>
  * The implementation class for Persistent interface.
- *
- * @author Andrej Petras
  */
 @SuppressWarnings("squid:S2160")
 @MappedSuperclass
@@ -36,22 +34,53 @@ public class PersistentTraceable extends Persistent {
      */
     @Column(name = "C_CREATIONDATE")
     @Temporal(TemporalType.TIMESTAMP)
-    public Date creationDate;
+    private Date creationDate;
     /**
      * The creation user.
      */
     @Column(name = "C_CREATIONUSER")
-    public String creationUser;
+    private String creationUser;
     /**
      * The modification user.
      */
     @Column(name = "C_MODIFICATIONUSER")
-    public String modificationUser;
+    private String modificationUser;
     /**
      * The modification date.
      */
     @Column(name = "C_MODIFICATIONDATE")
     @Temporal(TemporalType.TIMESTAMP)
-    public Date modificationDate;
+    private Date modificationDate;
 
+    public Date getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(Date creationDate) {
+        this.creationDate = creationDate;
+    }
+
+    public Date getModificationDate() {
+        return modificationDate;
+    }
+
+    public void setModificationDate(Date modificationDate) {
+        this.modificationDate = modificationDate;
+    }
+
+    public void setCreationUser(String creationUser) {
+        this.creationUser = creationUser;
+    }
+
+    public String getCreationUser() {
+        return creationUser;
+    }
+
+    public void setModificationUser(String modificationUser) {
+        this.modificationUser = modificationUser;
+    }
+
+    public String getModificationUser() {
+        return modificationUser;
+    }
 }
