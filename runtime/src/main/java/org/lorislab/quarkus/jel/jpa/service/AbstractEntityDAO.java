@@ -191,10 +191,8 @@ public abstract class AbstractEntityDAO<T extends Persistent> implements EntityD
             if (flush) {
                 em.flush();
             }
-            System.out.println("******************* update: " + result);
             return result;
         } catch (Exception e) {
-            e.printStackTrace();
             throw handleConstraint(e, EntityServiceErrors.MERGE_ENTITY_FAILED);
         }
     }
